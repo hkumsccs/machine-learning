@@ -75,9 +75,43 @@ def tinyMazeSearch(problem):
     e = Directions.EAST
     return  [s,s,w,s,w,e,w,w,s,w]
 
-def graphSearchAlgorithm():
+# Abstract method to do backtracking
+# FIXME Refactor this method to keep simple
+def backTrackAlgorithm(actions, stateRoute, currentRoute):
+    bp, trick = 0, False 
+    for bp in range(min(len(stateRoute), len(currentRoute))):
+        if stateRoute[bp] != currentRoute[bp]:
+            trick = False 
+            del actions[-len(currentRoute)+bp:]
+            break
+        else:
+            trick = True
 
-    return None
+    return list(actions) + stateRoute[bp+1 if trick else bp:]
+
+# Abstract method to implemnt GFS
+def graphSearchAlgorithm(problem, fringe, explored, actions, currentRoute):
+    # Initialize frontier using initial state of problem ,explore set to be empty ,a path list as the result
+    fringe.push((problem.getStartState(), [], 0))
+    # While frontier is not empty
+    while not fringe.isEmpty():
+        # Choose a leaf node and remove it from fringe
+        (state, stateRoute, stateCost) = fringe.pop()
+        # If node is not in the explored set
+        if state not in explored:
+            # Add node to explored set
+            explored.add(state)
+            # Start backtracking
+            actions = backTrackAlgorithm(actions, stateRoute, currentRoute) 
+            currentRoute = list(stateRoute)
+            # If node contains a goal state then return corresponding solution
+            if problem.isGoalState(state): break
+            # Expand the node, adding the resulting node
+            for nextState, nextDirection, nextStateCost in problem.getSuccessors(state):
+                if len(set([nextState]) - explored) != 0:
+                    fringe.push((nextState, list(stateRoute) + [nextDirection], stateCost + nextStateCost))
+            
+    return actions 
 
 def depthFirstSearch(problem):
     """
@@ -94,83 +128,19 @@ def depthFirstSearch(problem):
     print "Start's successors:", problem.getSuccessors(problem.getStartState())
     """
     "*** YOUR CODE HERE ***"
-    # Initialize frontier using initial state of problem ,explore set to be empty ,a path list as the result
-    frontier, explored, actions, backTrackActions = util.Stack(), set(), [], []
-    frontier.push((problem.getStartState(), []))
-
-    # While frontier is not empty
-    while not frontier.isEmpty():
-        # Choose a leaf node and remove it from frontier
-        (state, stateRoute), bp, trick = frontier.pop(), 0, False
-        # If node is not in the explored set
-        if state not in explored:
-            # Add node to explored set
-            explored.add(state)
-            # Common backtracking algorithm
-            for bp in range(min(len(stateRoute),len(backTrackActions))):
-                if stateRoute[bp] != backTrackActions[bp]:
-                    del actions[-len(backTrackActions)+bp:]
-                    trick = False 
-                    break
-                else:
-                    trick = True
-
-            backTrackActions = list(stateRoute) # Cache the current for next round backtracking
-            actions = list(actions) + stateRoute[bp+1 if trick else bp:]
-                 
-            # If node contains a goal state then return corresponding solution
-            if problem.isGoalState(state):
-                break
-            # Expand the node, adding the resulting node
-            for nextState, nextAction, nextStepCost in problem.getSuccessors(state):
-                if len(set([nextState]) - explored) != 0:
-                    frontier.push((nextState, list(stateRoute) + [nextAction]))
-
-    return actions 
+    return graphSearchAlgorithm(problem, util.Stack(), set(), [], [])
 
 def breadthFirstSearch(problem):
     """
     Search the shallowest nodes in the search tree first.
     """
     "*** YOUR CODE HERE ***"
-    # Initialize frontier using initial state of problem ,explore set to be empty ,a path list as the result
-    frontier, explored, actions, backTrackActions = util.Queue(), set(), [], []
-    frontier.push((problem.getStartState(), [], 0))
-    # While frontier is not empty
-    while not frontier.isEmpty():
-        # Choose a leaf node and remove it from frontier
-        (state, stateRoute, depth), bp, trick = frontier.pop(), 0, False
-        # 
-        # If node is not in the explored set
-        if state not in explored:
-            # Add node to explored set
-            explored.add(state)
-            # Common backtracking algorithm
-            for bp in range(min(len(stateRoute),len(backTrackActions))):
-                if stateRoute[bp] != backTrackActions[bp]:
-                    del actions[-len(backTrackActions)+bp:]
-                    trick = False 
-                    break
-                else:
-                    trick = True
-
-            backTrackActions = list(stateRoute) # Cache the current for next round backtracking
-            actions = list(actions) + stateRoute[bp+1 if trick else bp:]
-                 
-            # If node contains a goal state then return corresponding solution
-            if problem.isGoalState(state):
-                break
-            # Expand the node, adding the resulting node
-            for nextState, nextAction, nextStepCost in problem.getSuccessors(state):
-                if len(set([nextState]) - explored) != 0:
-                    frontier.push((nextState, list(stateRoute) + [nextAction], depth + 1))
-
-    return actions 
+    return graphSearchAlgorithm(problem, util.Queue(), set(), [], [])
 
 def uniformCostSearch(problem):
     "Search the node of least total cost first. "
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    return graphSearchAlgorithm(problem, util.PriorityQueue(), set(), [], [])
 
 def nullHeuristic(state, problem=None):
     """
