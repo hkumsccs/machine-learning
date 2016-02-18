@@ -92,26 +92,32 @@ def backTrackAlgorithm(stateRoute, currentRoute):
 # Abstract method to implemnt GFS
 def graphSearchAlgorithm(problem, fringe, priority = False, explored = set(), currentRoute = []):
     # Initialize frontier using initial state of problem ,explore set to be empty ,a path list as the result
-    apply(fringe.push, [(problem.getStartState(), [])] + ([0] if priority else []))
+    apply(fringe.push, [[problem.getStartState()]] + ([0] if priority else []))
     # While frontier is not empty
     while not fringe.isEmpty():
         # Choose a leaf node and remove it from fringe
-        (state, stateRoute), stateCost = fringe.pop(), 0
+        stateRoute, stateCost = fringe.pop(), 0
         # If node is not in the explored set
-        if state not in explored:
+        if stateRoute[-1] not in explored:
             # Add node to explored set
-            explored.add(state)
+            explored.add(stateRoute[-1])
             # Start backtracking
             currentRoute = backTrackAlgorithm(list(stateRoute), list(currentRoute)) 
             # If node contains a goal state then return corresponding solution
-            if problem.isGoalState(state): break
+            if problem.isGoalState(stateRoute[-1]): break
             # Expand the node, adding the resulting node
-            for nextState, nextDirection, nextStateCost in problem.getSuccessors(state):
+            for nextState, nextDirection, nextStateCost in problem.getSuccessors(stateRoute[-1]):
                 if len(set([nextState]) - explored) != 0:
                     #fringe.push((nextState, currentRoute + [nextDirection]))
-                    apply(fringe.push, [(nextState, currentRoute + [nextDirection])] + ([stateCost + nextStateCost] if priority else []))
+                    apply(fringe.push, [currentRoute + [nextState]] + ([stateCost + nextStateCost] if priority else []))
             
-    return currentRoute 
+    return [ getDirection(stateRoute[i], stateRoute[i-1]) for i in range(1, len(stateRoute)) ]
+
+def getDirection(l, r):
+    if(r[0]-l[0] == 1): return 'West'
+    if(r[0]-l[0] == -1): return 'East'
+    if(r[1]-l[1] == 1): return 'South'
+    if(r[1]-l[1] == -1): return 'North'
 
 def depthFirstSearch(problem):
     """
@@ -152,7 +158,7 @@ def nullHeuristic(state, problem=None):
 def aStarSearch(problem, heuristic=nullHeuristic):
     "Search the node that has the lowest combined cost and heuristic first."
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    return graphSearchAlgorithm(problem, util.PriorityQueueWithFunction(heuristic))
 
 
 # Abbreviations
