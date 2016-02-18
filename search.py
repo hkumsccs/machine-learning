@@ -76,21 +76,16 @@ def tinyMazeSearch(problem):
     return  [s,s,w,s,w,e,w,w,s,w]
 
 # Abstract method to do backtracking
-# FIXME Refactor this method to keep simple
 def backTrackAlgorithm(stateRoute, currentRoute):
-    bp, trick = 0, False 
-    for bp in range(min(len(stateRoute), len(currentRoute))):
-        if stateRoute[bp] != currentRoute[bp]:
-            trick = False 
-            del currentRoute[bp:]
-            break
-        else:
-            trick = True
+    bp, checkLength = 0, min(len(stateRoute), len(currentRoute)) 
+    for bp in range(checkLength):
+        if stateRoute[bp] != currentRoute[bp]: 
+            return currentRoute[0:bp] + stateRoute[bp:]
+    return currentRoute[0:checkLength] + stateRoute[checkLength:]
 
-    return currentRoute + stateRoute[bp+1 if trick else bp:]
 
 # Abstract method to implemnt GFS
-def graphSearchAlgorithm(problem, fringe, priority = False, explored = set(), currentRoute = []):
+def graphSearchAlgorithm(problem, fringe, priority = False, heuristic = False, explored = set(), currentRoute = []):
     # Initialize frontier using initial state of problem ,explore set to be empty ,a path list as the result
     apply(fringe.push, [[problem.getStartState()]] + ([0] if priority else []))
     # While frontier is not empty
@@ -110,7 +105,7 @@ def graphSearchAlgorithm(problem, fringe, priority = False, explored = set(), cu
                 if len(set([nextState]) - explored) != 0:
                     #fringe.push((nextState, currentRoute + [nextDirection]))
                     apply(fringe.push, [currentRoute + [nextState]] + ([stateCost + nextStateCost] if priority else []))
-            
+    # Transform the coordinate change back to direction for animation 
     return [ getDirection(stateRoute[i], stateRoute[i-1]) for i in range(1, len(stateRoute)) ]
 
 def getDirection(l, r):
@@ -158,7 +153,7 @@ def nullHeuristic(state, problem=None):
 def aStarSearch(problem, heuristic=nullHeuristic):
     "Search the node that has the lowest combined cost and heuristic first."
     "*** YOUR CODE HERE ***"
-    return graphSearchAlgorithm(problem, util.PriorityQueueWithFunction(heuristic))
+    return graphSearchAlgorithm(problem, util.PriorityQueueWithFunction(heuristic), False, True)
 
 
 # Abbreviations
