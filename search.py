@@ -83,15 +83,21 @@ def backTrackAlgorithm(stateRoute, currentRoute):
             return currentRoute[0:bp] + stateRoute[bp:]
     return currentRoute[0:checkLength] + stateRoute[checkLength:]
 
+# Plus additional arguments for UCS and heuristic
+def getAdditionalArgs(problem, priority, heuristic, stateRoute, cost = 1):
+    if priority and not heuristic: return [stateRoute, problem.getCostOfActions(stateRoute2Actions(stateRoute))]
+    if not priority and heuristic: return [stateRoute]
+    return [stateRoute] 
 
 # Abstract method to implemnt GFS
 def graphSearchAlgorithm(problem, fringe, priority = False, heuristic = False, explored = set(), currentRoute = []):
     # Initialize frontier using initial state of problem ,explore set to be empty ,a path list as the result
-    apply(fringe.push, [[problem.getStartState()]] + ([0] if priority else []))
+    print getAdditionalArgs(problem, priority, heuristic, [problem.getStartState()])
+    apply(fringe.push, getAdditionalArgs(problem, priority, heuristic, [problem.getStartState()]))
     # While frontier is not empty
     while not fringe.isEmpty():
         # Choose a leaf node and remove it from fringe
-        stateRoute, stateCost = fringe.pop(), 0
+        stateRoute = fringe.pop()
         # If node is not in the explored set
         if stateRoute[-1] not in explored:
             # Add node to explored set
@@ -104,10 +110,15 @@ def graphSearchAlgorithm(problem, fringe, priority = False, heuristic = False, e
             for nextState, nextDirection, nextStateCost in problem.getSuccessors(stateRoute[-1]):
                 if len(set([nextState]) - explored) != 0:
                     #fringe.push((nextState, currentRoute + [nextDirection]))
-                    apply(fringe.push, [currentRoute + [nextState]] + ([stateCost + nextStateCost] if priority else []))
-    # Transform the coordinate change back to direction for animation 
+                    apply(fringe.push, getAdditionalArgs(problem, priority, heuristic, currentRoute + [nextState], nextStateCost))
+
+    return stateRoute2Actions(stateRoute)
+
+# Transform the coordinate change back to direction for animation 
+def stateRoute2Actions(stateRoute):
     return [ getDirection(stateRoute[i], stateRoute[i-1]) for i in range(1, len(stateRoute)) ]
 
+# Transformation Dictionary
 def getDirection(l, r):
     if(r[0]-l[0] == 1): return 'West'
     if(r[0]-l[0] == -1): return 'East'
@@ -153,7 +164,8 @@ def nullHeuristic(state, problem=None):
 def aStarSearch(problem, heuristic=nullHeuristic):
     "Search the node that has the lowest combined cost and heuristic first."
     "*** YOUR CODE HERE ***"
-    return graphSearchAlgorithm(problem, util.PriorityQueueWithFunction(heuristic), False, True)
+    # Without affecting other algorithms, we have to fetch the last item from the current route
+    return graphSearchAlgorithm(problem, util.PriorityQueueWithFunction(lambda items: heuristic(items[-1], problem)), False, True)
 
 
 # Abbreviations
