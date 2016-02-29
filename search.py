@@ -75,55 +75,26 @@ def tinyMazeSearch(problem):
     e = Directions.EAST
     return  [s,s,w,s,w,e,w,w,s,w]
 
-# Abstract method to do backtracking
-def backTrackAlgorithm(stateRoute, currentRoute):
-    bp, checkLength = 0, min(len(stateRoute), len(currentRoute)) 
-    for bp in range(checkLength):
-        if stateRoute[bp] != currentRoute[bp]: 
-            return currentRoute[0:bp] + stateRoute[bp:]
-    return currentRoute[0:checkLength] + stateRoute[checkLength:]
-
-# Plus additional arguments for UCS and heuristic
-def getAdditionalArgs(problem, priority, heuristic, stateRoute, cost = 1):
-    if priority and not heuristic: return [stateRoute, problem.getCostOfActions(stateRoute2Actions(stateRoute))]
-    if not priority and heuristic: return [stateRoute]
-    return [stateRoute] 
-
 # Abstract method to implemnt GFS
-def graphSearchAlgorithm(problem, fringe, priority = False, heuristic = False, explored = set(), currentRoute = []):
-    # Initialize frontier using initial state of problem ,explore set to be empty ,a path list as the result
-    print getAdditionalArgs(problem, priority, heuristic, [problem.getStartState()])
-    apply(fringe.push, getAdditionalArgs(problem, priority, heuristic, [problem.getStartState()]))
+def graphSearchAlgorithm(problem, fringe, fringePush = lambda f, s, p: f.push(s) ,explored = set()):
+    # Start state
+    fringePush(fringe, (problem.getStartState(), [], 0), problem)
     # While frontier is not empty
     while not fringe.isEmpty():
-        # Choose a leaf node and remove it from fringe
-        stateRoute = fringe.pop()
+        (parentNode ,route, cost) = fringe.pop()
         # If node is not in the explored set
-        if stateRoute[-1] not in explored:
-            # Add node to explored set
-            explored.add(stateRoute[-1])
-            # Start backtracking
-            currentRoute = backTrackAlgorithm(list(stateRoute), list(currentRoute)) 
-            # If node contains a goal state then return corresponding solution
-            if problem.isGoalState(stateRoute[-1]): break
+        if parentNode not in explored:
+            # If node reaches a goal state then return corresponding solution
+            if problem.isGoalState(parentNode): return route
             # Expand the node, adding the resulting node
-            for nextState, nextDirection, nextStateCost in problem.getSuccessors(stateRoute[-1]):
-                if len(set([nextState]) - explored) != 0:
-                    #fringe.push((nextState, currentRoute + [nextDirection]))
-                    apply(fringe.push, getAdditionalArgs(problem, priority, heuristic, currentRoute + [nextState], nextStateCost))
-
-    return stateRoute2Actions(stateRoute)
-
-# Transform the coordinate change back to direction for animation 
-def stateRoute2Actions(stateRoute):
-    return [ getDirection(stateRoute[i], stateRoute[i-1]) for i in range(1, len(stateRoute)) ]
-
-# Transformation Dictionary
-def getDirection(l, r):
-    if(r[0]-l[0] == 1): return 'West'
-    if(r[0]-l[0] == -1): return 'East'
-    if(r[1]-l[1] == 1): return 'South'
-    if(r[1]-l[1] == -1): return 'North'
+            if parentNode not in explored:
+                # Add node to explored set
+                explored.add(parentNode)
+                # 
+                for childNode, childAction, childCost in problem.getSuccessors(parentNode):
+                    # Processing for problem other than position searching
+                    fringePush(fringe, (childNode, route + [childAction], cost + childCost), problem)
+                    #apply(fringe.push, normalizeState((childNode, route + [childAction], childCost), isHeuristic))
 
 def depthFirstSearch(problem):
     """
@@ -152,7 +123,7 @@ def breadthFirstSearch(problem):
 def uniformCostSearch(problem):
     "Search the node of least total cost first. "
     "*** YOUR CODE HERE ***"
-    return graphSearchAlgorithm(problem, util.PriorityQueue(), True)
+    return graphSearchAlgorithm(problem, util.PriorityQueue(), lambda f,s,p: f.push(s, s[2]))
 
 def nullHeuristic(state, problem=None):
     """
@@ -165,7 +136,7 @@ def aStarSearch(problem, heuristic=nullHeuristic):
     "Search the node that has the lowest combined cost and heuristic first."
     "*** YOUR CODE HERE ***"
     # Without affecting other algorithms, we have to fetch the last item from the current route
-    return graphSearchAlgorithm(problem, util.PriorityQueueWithFunction(lambda items: heuristic(items[-1], problem)), False, True)
+    return graphSearchAlgorithm(problem, util.PriorityQueueWithFunction(lambda s: s[2] + heuristic(s[0], problem)))
 
 
 # Abbreviations
