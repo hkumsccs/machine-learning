@@ -82,6 +82,7 @@ def graphSearchAlgorithm(problem, fringe, fringePush = lambda f, s, p: f.push(s)
     # While frontier is not empty
     while not fringe.isEmpty():
         (parentNode ,route, cost) = fringe.pop()
+        print parentNode
         # If node is not in the explored set
         if parentNode not in explored:
             # If node reaches a goal state then return corresponding solution
