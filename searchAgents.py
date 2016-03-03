@@ -342,9 +342,6 @@ class CornersProblem(search.SearchProblem):
             if self.walls[x][y]: return 999999
         return len(actions)
 
-def mdist(xy1, xy2):
-    return abs(xy1[0] - xy2[0]) + abs(xy1[1] - xy2[1])
-
 def cornersHeuristic(state, problem):
     """
     A heuristic for the CornersProblem that you defined.
@@ -361,41 +358,36 @@ def cornersHeuristic(state, problem):
     corners = problem.corners # These are the corner coordinates
     walls = problem.walls # These are the walls of the maze, as a Grid (game.py)
 
-    hd = walls.width - 3
-    vd = walls.height - 3
-
     "*** YOUR CODE HERE ***"
     # Get the current pacman position
     xy1, heuristic, slen = state[0], 99999, len(state[1])
-    # heuristic = 0 
-    # 
 
     if slen == 0: 
         return 0
     elif slen == 1: 
         txy1 = state[1][0]
-        return mdist(xy1, txy1) 
+        return util.manhattanDistance(xy1, txy1) 
     elif slen == 2:
         txy1 = state[1][0]
         txy2 = state[1][1]
-        return min(mdist(xy1, txy1), mdist(xy1, txy2)) + mdist(txy1, txy2) 
+        return min(util.manhattanDistance(xy1, txy1), util.manhattanDistance(xy1, txy2)) + util.manhattanDistance(txy1, txy2) 
     elif slen == 3:
         # Breakdown into 2 nodes problem
         txy1 = state[1][0]
         txy2 = state[1][1]
         txy3 = state[1][2]
-        dist_xt1 = mdist(xy1, txy1)
-        dist_xt2 = mdist(xy1, txy2)
-        dist_xt3 = mdist(xy1, txy3)
-        xt12 = mdist(txy1, txy2)
-        xt13 = mdist(txy1, txy3)
-        xt23 = mdist(txy2, txy3)
+        dist_xt1 = util.manhattanDistance(xy1, txy1)
+        dist_xt2 = util.manhattanDistance(xy1, txy2)
+        dist_xt3 = util.manhattanDistance(xy1, txy3)
+        xt12 = util.manhattanDistance(txy1, txy2)
+        xt13 = util.manhattanDistance(txy1, txy3)
+        xt23 = util.manhattanDistance(txy2, txy3)
         return min(dist_xt1 + min(xt13+xt23, xt12+xt23), dist_xt2 + min(xt23+xt13,xt12+xt13), dist_xt3 + min(xt23+xt12, xt13+xt12))
     else:
         # Not really in general
+        hd = walls.width - 3
+        vd = walls.height - 3
         for xy2 in list(state[1]):
-            #heuristic = max(heuristic, abs(xy1[0] - xy2[0]) + abs(xy1[1] - xy2[1]))
-            #heuristic += (abs(xy1[0] - xy2[0]) + abs(xy1[1] - xy2[1]))
             heuristic = min(heuristic, abs(xy1[0] - xy2[0]) + abs(xy1[1] - xy2[1]))
         return heuristic + min(2*vd+hd, 2*hd+vd)
     
@@ -490,7 +482,10 @@ def foodHeuristic(state, problem):
     """
     position, foodGrid = state
     "*** YOUR CODE HERE ***"
-    return 0
+    if problem.isGoalState(state):
+        return 0
+    else:
+        return 1
 
 class ClosestDotSearchAgent(SearchAgent):
     "Search for all food using a sequence of searches"
