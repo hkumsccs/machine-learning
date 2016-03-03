@@ -76,13 +76,15 @@ def tinyMazeSearch(problem):
     return  [s,s,w,s,w,e,w,w,s,w]
 
 # Abstract method to implemnt GFS
-def graphSearchAlgorithm(problem, fringe, fringePush = lambda f, s, p: f.push(s) ,explored = set()):
-    # Start state
-    fringePush(fringe, (problem.getStartState(), [], 0), problem)
+def gfs(problem, dataStructure, genericPush = lambda f, s, p: f.push(s)):
+    # Follow the pseudo code in lecture note
+    # FIX: explored cannot be used as default parameter, in order to pass through autograder.py
+    explored = set()
+    # Initialize the start state
+    genericPush(dataStructure, (problem.getStartState(), list(), 0), problem)
     # While frontier is not empty
-    while not fringe.isEmpty():
-        (parentNode ,route, cost) = fringe.pop()
-        print parentNode
+    while not dataStructure.isEmpty():
+        (parentNode ,route, cost) = dataStructure.pop()
         # If node is not in the explored set
         if parentNode not in explored:
             # If node reaches a goal state then return corresponding solution
@@ -94,8 +96,7 @@ def graphSearchAlgorithm(problem, fringe, fringePush = lambda f, s, p: f.push(s)
                 # 
                 for childNode, childAction, childCost in problem.getSuccessors(parentNode):
                     # Processing for problem other than position searching
-                    fringePush(fringe, (childNode, route + [childAction], cost + childCost), problem)
-                    #apply(fringe.push, normalizeState((childNode, route + [childAction], childCost), isHeuristic))
+                    genericPush(dataStructure, (childNode, route + [childAction], cost + childCost), problem)
 
 def depthFirstSearch(problem):
     """
@@ -112,19 +113,19 @@ def depthFirstSearch(problem):
     print "Start's successors:", problem.getSuccessors(problem.getStartState())
     """
     "*** YOUR CODE HERE ***"
-    return graphSearchAlgorithm(problem, util.Stack())
+    return gfs(problem, util.Stack())
 
 def breadthFirstSearch(problem):
     """
     Search the shallowest nodes in the search tree first.
     """
     "*** YOUR CODE HERE ***"
-    return graphSearchAlgorithm(problem, util.Queue())
+    return gfs(problem, util.Queue())
 
 def uniformCostSearch(problem):
     "Search the node of least total cost first. "
     "*** YOUR CODE HERE ***"
-    return graphSearchAlgorithm(problem, util.PriorityQueue(), lambda f,s,p: f.push(s, s[2]))
+    return gfs(problem, util.PriorityQueue(), lambda f,s,p: f.push(s, s[2]))
 
 def nullHeuristic(state, problem=None):
     """
@@ -137,7 +138,7 @@ def aStarSearch(problem, heuristic=nullHeuristic):
     "Search the node that has the lowest combined cost and heuristic first."
     "*** YOUR CODE HERE ***"
     # Without affecting other algorithms, we have to fetch the last item from the current route
-    return graphSearchAlgorithm(problem, util.PriorityQueueWithFunction(lambda s: s[2] + heuristic(s[0], problem)))
+    return gfs(problem, util.PriorityQueueWithFunction(lambda s: s[2] + heuristic(s[0], problem)))
 
 
 # Abbreviations
