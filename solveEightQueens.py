@@ -1,5 +1,6 @@
 import random
 import copy
+import operator
 from optparse import OptionParser
 
 class SolveEightQueens:
@@ -73,12 +74,45 @@ class Board:
         return costBoard
 
     def getBetterBoard(self):
-        #TODO: put your code here...
-        return (self, 42)
+        if self.getNumberOfAttacks() != 0:
+            #TODO: put your code here...
+            costBoard = self.getCostBoard().squareArray
+            minCostPosition = []
+            n = len(self.squareArray)
+            
+            info = [(item, row, col) if item != 'q' else (9999, row, col) for row, sublist in enumerate(costBoard) for col, item in enumerate(sublist)]
+            minCost = min(info , key=operator.itemgetter(0))[0]
+            minCostPositionInfo = [v for i, v in enumerate(info) if v[0] == minCost]
+            smvi, smvr, smvc = minCostPositionInfo[random.randint(0, len(minCostPositionInfo) - 1)]
+
+            # Update
+            for r in range(0, n):
+                if r == smvr:
+                    self.squareArray[r][smvc] = "q"
+                else:
+                    self.squareArray[r][smvc] = "."
+
+            return (self, minCost)
+        else:
+            return (self, 0)
 
     def getNumberOfAttacks(self):
         #TODO: put your code here...
-        return 8
+        count = 0
+        n = len(self.squareArray)
+        queens = [-1] * n
+        #Record the queen column position
+        for r in range(0,n):
+            for c in range(0,n):
+                if self.squareArray[r][c] == "q":
+                    queens[c] = r
+
+        for r in range(0,n):
+            for c in range(r+1,n):
+                if queens[r] == queens[c] or abs(r-c) == abs(queens[r]-queens[c]):
+                    count += 1
+
+        return count 
 
 if __name__ == "__main__":
     #Enable the following line to generate the same random numbers (useful for debugging)
