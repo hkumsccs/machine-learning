@@ -490,7 +490,7 @@ def foodHeuristic(state, problem):
         # Step 2: Create a graph representation g = (v,e)
         # We use chebyshev distance to approximate the distance between points
         vertice = [ str(index) for index, value in enumerate(foods)]
-        edges = set([ (util.chebyshevDistance(v0, foods[i1]), str(i0), str(i1)) for i0, v0 in enumerate(foods) for i1 in range(i0 + 1, len(foods))])
+        edges = set([ (chebyshevDistance(v0, foods[i1]), str(i0), str(i1)) for i0, v0 in enumerate(foods) for i1 in range(i0 + 1, len(foods))])
         #edges = set([ (util.manhattanDistance(v0, foods[i1]), str(i0), str(i1)) for i0, v0 in enumerate(foods) for i1 in range(i0 + 1, len(foods))])
         # Step 3: For those remaining foods, find the overall weight from minimum spanning tree using kruskal algorithm
         parent, rank = dict(), dict()
@@ -620,3 +620,7 @@ def mazeDistance(point1, point2, gameState):
     assert not walls[x2][y2], 'point2 is a wall: ' + str(point2)
     prob = PositionSearchProblem(gameState, start=point1, goal=point2, warn=False, visualize=False)
     return len(search.bfs(prob))
+
+def chebyshevDistance( xy1, xy2 ):
+    "Returns the Manhattan distance between points xy1 and xy2"
+    return max(abs( xy1[0] - xy2[0] ), abs( xy1[1] - xy2[1] ))
