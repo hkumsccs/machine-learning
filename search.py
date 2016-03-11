@@ -75,16 +75,18 @@ def tinyMazeSearch(problem):
     e = Directions.EAST
     return  [s,s,w,s,w,e,w,w,s,w]
 
-# Abstract method to implemnt GFS
 def gfs(problem, dataStructure, genericPush = lambda f, s, p: f.push(s)):
     # Follow the pseudo code in lecture note
+    # genericPush is used to provide flexibility of different data structure
     # FIX: explored cannot be used as default parameter, in order to pass through autograder.py
+    # Initialize explored set to be empty
     explored = set()
-    # Initialize the start state
+    # Initialize the start frontier 
     genericPush(dataStructure, (problem.getStartState(), list(), 0), problem)
     # While frontier is not empty
     while not dataStructure.isEmpty():
-        (parentNode ,route, cost) = dataStructure.pop()
+        # Choose a leaf node and remove it from frontier
+        (parentNode, route, cost) = dataStructure.pop()
         # If node is not in the explored set
         if parentNode not in explored:
             # If node reaches a goal state then return corresponding solution
@@ -93,10 +95,10 @@ def gfs(problem, dataStructure, genericPush = lambda f, s, p: f.push(s)):
             if parentNode not in explored:
                 # Add node to explored set
                 explored.add(parentNode)
-                # 
+                # Expand the node, adding the resulting nodes to the frontier
                 for childNode, childAction, childCost in problem.getSuccessors(parentNode):
                     # Processing for problem other than position searching
-                    genericPush(dataStructure, (childNode, route + [childAction], cost + childCost), problem)
+                    genericPush(dataStructure, (childNode, route + [childAction], problem.getCostOfActions(route + [childAction])), problem)
 
 def depthFirstSearch(problem):
     """

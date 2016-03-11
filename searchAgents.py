@@ -41,6 +41,7 @@ from game import Actions
 import util
 import time
 import search
+import operator
 
 class GoWestAgent(Agent):
     "An agent that goes West until it can't."
@@ -390,8 +391,6 @@ def cornersHeuristic(state, problem):
         for xy2 in list(state[1]):
             heuristic = min(heuristic, abs(xy1[0] - xy2[0]) + abs(xy1[1] - xy2[1]))
         return heuristic + min(2*vd+hd, 2*hd+vd)
-    
-    #return heuristic 
 
 class AStarCornersAgent(SearchAgent):
     "A SearchAgent for FoodSearchProblem using A* and your foodHeuristic"
@@ -482,10 +481,43 @@ def foodHeuristic(state, problem):
     """
     position, foodGrid = state
     "*** YOUR CODE HERE ***"
-    if problem.isGoalState(state):
-        return 0
-    else:
-        return 1
+    # http://www.geeksforgeeks.org/greedy-algorithms-set-2-kruskals-minimum-spanning-tree-mst/
+    heuristic, foods = 0, foodGrid.asList()
+    # Include the pacman position in the graph
+    foods.append(position)
+    # Step 1: Mark the food with minimum distance with the current pacman location 
+    if len(foods) > 0:
+        # Step 2: Create a graph representation g = (v,e)
+        # We use chebyshev distance to approximate the distance between points
+        vertice = [ str(index) for index, value in enumerate(foods)]
+        edges = set([ (util.chebyshevDistance(v0, foods[i1]), str(i0), str(i1)) for i0, v0 in enumerate(foods) for i1 in range(i0 + 1, len(foods))])
+        #edges = set([ (util.manhattanDistance(v0, foods[i1]), str(i0), str(i1)) for i0, v0 in enumerate(foods) for i1 in range(i0 + 1, len(foods))])
+        # Step 3: For those remaining foods, find the overall weight from minimum spanning tree using kruskal algorithm
+        parent, rank = dict(), dict()
+        for v in vertice: parent[v], rank[v] = v, 0
+        edges = list(edges)
+        edges.sort()
+        for w, v1, v2 in edges:
+            # If edge doesn't create a cycle, consider as an edge in mst
+            r1, r2 = find(parent, v1), find(parent, v2)
+            if r1 != r2:     
+                union(parent, rank, r1, r2)
+                heuristic +=  w # Add weight for each edge in mst
+                #heuristic +=  w * 0.5 # Add weight for each edge in mst (use in manhattan)
+
+    return heuristic 
+
+def find(p, v):
+    if p[v] != v: p[v] = find(p, p[v])
+    return p[v]
+
+def union(p, r, root1, root2):
+    if root1 != root2:
+        if r[root1] > r[root2]:
+            p[root2] = root1
+        else:
+            p[root1] = root2
+            if r[root1] == r[root2]: r[root2] += 1
 
 class ClosestDotSearchAgent(SearchAgent):
     "Search for all food using a sequence of searches"
