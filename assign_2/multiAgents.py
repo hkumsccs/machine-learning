@@ -55,7 +55,7 @@ class ReflexAgent(Agent):
         GameStates (pacman.py) and returns a number, where higher numbers are better.
 
         The code below extracts some useful information from the state, like the
-        remaining food (newFood) and Pacman position after moving (newPos).
+        remaining food (newFood) and Pacman position after moving (currentPos).
         newScaredTimes holds the number of moves that each ghost will remain
         scared because of Pacman having eaten a power pellet.
 
@@ -64,13 +64,24 @@ class ReflexAgent(Agent):
         """
         # Useful information you can extract from a GameState (pacman.py)
         successorGameState = currentGameState.generatePacmanSuccessor(action)
-        newPos = successorGameState.getPacmanPosition()
+        currentPos = successorGameState.getPacmanPosition()
         newFood = successorGameState.getFood()
         newGhostStates = successorGameState.getGhostStates()
         newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
 
         "*** YOUR CODE HERE ***"
-        return successorGameState.getScore()
+        foodList = currentGameState.getFood().asList()
+        successorPacPos = successorGameState.getPacmanPosition()
+
+        for ghostState in newGhostStates:
+          if ghostState.getPosition() == successorPacPos:
+            return -float("inf") # Avoid Ghost eats Pacman, very conservative in map having capsules
+
+        numFood = len(foodList)
+
+        pacFoodDist = [-2 * util.manhattanDistance(foodPos, currentPos) for foodPos in foodList]
+
+        return max(pacFoodDist) 
 
 def scoreEvaluationFunction(currentGameState):
     """
@@ -125,7 +136,52 @@ class MinimaxAgent(MultiAgentSearchAgent):
             Returns the total number of agents in the game
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        startDepth = 0
+        currentAgentIdx = 0 # Pacman goes first
+        return self.minimax(gameState, currentAgentIdx, startDepth)[0]
+
+    def minimax(self, gameState, agentIdx, layer):
+        numAgents = gameState.getNumAgents()
+        
+        if numAgents <= agentIdx:
+          agentIdx = 0 # Pacman's turn again
+          layer += 1 
+
+        if layer == self.depth:
+          return (0, self.evaluationFunction(gameState))
+         
+        if agentIdx == 0:
+          return self.eval('MAX', gameState, agentIdx, layer)
+        else:
+          return self.eval('MIN', gameState, agentIdx, layer)
+
+    def eval(self, type, gameState, agentIdx, layer):
+
+        # Terminal node checking, no legal move anymore
+        if not gameState.getLegalActions(agentIdx):
+          return (0, self.evaluationFunction(gameState))
+
+        if type == 'MIN':
+          # Worst max is inf (Initialize)
+          decision = (Directions.STOP, float("inf"))
+        else:
+          # Worst max is -inf (Initialize)
+          decision = (Directions.STOP, -float("inf"))
+
+        for action in gameState.getLegalActions(agentIdx):
+          if action != Directions.STOP:
+            result = self.minimax(gameState.generateSuccessor(agentIdx, action), agentIdx + 1, layer)[1]
+
+            if type == 'MIN':
+              nextDecision = min(decision[1], result)
+            else:
+              nextDecision = max(decision[1], result)
+
+            if nextDecision is not decision[1]:
+              decision = (action, nextDecision)
+
+        return decision 
+
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
     """
@@ -163,9 +219,6 @@ def betterEvaluationFunction(currentGameState):
     """
     "*** YOUR CODE HERE ***"
     util.raiseNotDefined()
-
-# Abbreviation
-better = betterEvaluationFunction
 
 class ContestAgent(MultiAgentSearchAgent):
     """
