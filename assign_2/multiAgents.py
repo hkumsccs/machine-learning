@@ -187,28 +187,130 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
     """
       Your minimax agent with alpha-beta pruning (question 3)
     """
-
     def getAction(self, gameState):
-        """
-          Returns the minimax action using self.depth and self.evaluationFunction
-        """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        startDepth = 0
+        currentAgentIdx = 0 # Pacman goes first
+        return self.minimax(gameState, currentAgentIdx, startDepth, (-float("inf"), float("inf")))[0]
+
+    def minimax(self, gameState, agentIdx, layer, ab):
+        numAgents = gameState.getNumAgents()
+        
+        if numAgents <= agentIdx:
+          agentIdx = 0 # Pacman's turn again
+          layer += 1 
+
+        # ab-pruning doesn't limit the depth (maybe)
+        if layer == self.depth or gameState.isLose() or gameState.isWin():
+          return (0, self.evaluationFunction(gameState))
+         
+        if agentIdx == 0:
+          return self.eval('MAX', gameState, agentIdx, layer, ab)
+        else:
+          return self.eval('MIN', gameState, agentIdx, layer, ab)
+
+    def eval(self, type, gameState, agentIdx, layer, ab):
+
+        # Terminal node checking, no legal move anymore
+        if not gameState.getLegalActions(agentIdx):
+          return (0, self.evaluationFunction(gameState))
+
+        if type == 'MIN':
+          # Worst max is inf (Initialize)
+          decision = (Directions.STOP, float("inf"))
+        else:
+          # Worst max is -inf (Initialize)
+          decision = (Directions.STOP, -float("inf"))
+
+        for action in gameState.getLegalActions(agentIdx):
+          if action != Directions.STOP:
+            result = self.minimax(gameState.generateSuccessor(agentIdx, action), agentIdx + 1, layer, ab)[1]
+
+            if type == 'MIN':
+              nextDecision = min(decision[1], result)
+            else:
+              nextDecision = max(decision[1], result)
+
+            if nextDecision is not decision[1]:
+              decision = (action, nextDecision)
+
+            if type == 'MIN':
+              if decision[1] < ab[0]:
+                return decision
+              ab = (ab[0], min(ab[1], decision[1]))
+            else:
+              if decision[1] > ab[1]:
+                return decision
+              ab = (max(ab[0], decision[1]), ab[1])
+
+        return decision 
+
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
     """
       Your expectimax agent (question 4)
     """
-
     def getAction(self, gameState):
         """
-          Returns the expectimax action using self.depth and self.evaluationFunction
+          Returns the minimax action from the current gameState using self.depth
+          and self.evaluationFunction.
 
-          All ghosts should be modeled as choosing uniformly at random from their
-          legal moves.
+          Here are some method calls that might be useful when implementing minimax.
+
+          gameState.getLegalActions(agentIndex):
+            Returns a list of legal actions for an agent
+            agentIndex=0 means Pacman, ghosts are >= 1
+
+          gameState.generateSuccessor(agentIndex, action):
+            Returns the successor game state after an agent takes an action
+
+          gameState.getNumAgents():
+            Returns the total number of agents in the game
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        startDepth = 0
+        currentAgentIdx = 0 # Pacman goes first
+        return self.expectimax(gameState, currentAgentIdx, startDepth)[0]
+
+    def expectimax(self, gameState, agentIdx, layer):
+        numAgents = gameState.getNumAgents()
+        
+        if numAgents <= agentIdx:
+          agentIdx = 0 # Pacman's turn again
+          layer += 1 
+
+        if layer == self.depth:
+          return (0, self.evaluationFunction(gameState))
+         
+        if agentIdx == 0:
+          return self.eval('MAX', gameState, agentIdx, layer)
+        else:
+          return self.eval('EMAX', gameState, agentIdx, layer)
+
+    def eval(self, type, gameState, agentIdx, layer):
+
+        # Terminal node checking, no legal move anymore
+        if not gameState.getLegalActions(agentIdx):
+          return (0, self.evaluationFunction(gameState))
+
+        if type == 'EMAX':
+          # Worst expectimax is 0 (Initialize)
+          decision = (Directions.STOP, 0)
+        else:
+          # Worst max is -inf (Initialize)
+          decision = (Directions.STOP, -float("inf"))
+
+        for action in gameState.getLegalActions(agentIdx):
+          if action != Directions.STOP:
+            result = self.expectimax(gameState.generateSuccessor(agentIdx, action), agentIdx + 1, layer)[1]
+
+            if type == 'EMAX':
+              decision = (decision[0], decision[1] + (1./len(gameState.getLegalActions(agentIdx))) * result)
+            else:
+              nextDecision = max(decision[1], result)
+              if nextDecision is not decision[1]:
+                decision = (action, nextDecision)
+
+        return decision 
 
 def betterEvaluationFunction(currentGameState):
     """
