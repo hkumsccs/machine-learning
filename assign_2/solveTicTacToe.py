@@ -1,78 +1,14 @@
-""" Solve Tic Tac Toe misere version
-
-Idea:
-
-Initial data:
-
-game.board = ((0,1,2,3,4,5,6,7,8),(0,1,2,3,4,5,6,7,8),(0,1,2,3,4,5,6,7,8))
-game.playerIndex = 0
-
-while(game is not end) { 
-  update( game, game.playerIndex )
-  game.playerIndex = ( game.playerIndex + 1 ) % 2
-}
-
-"""
-import copy
+from copy import deepcopy
 import numpy as np
 
-class Configuration:
-  def __init__(self, board, depth):
-    self.board = copy.deepcopy(board)
-    self.depth = copy.deepcopy(depth)
+DEPTH = 3
+NUM_AGENT = 2
+# Misere quotient in the paper, pick prime numbers (arbitrary)
+QA, QB, QC, QD = 3, 7, 2, 5
 
-class Game:
-  def __init__(self):
-    self.board = (['0','1','2','3','4','5','6','7','8'], ['0','1','2','3','4','5','6','7','8'], ['0','1','2','3','4','5','6','7','8'])
-    self.playerIndex = 0
-    self.depth = 3
-
-  def copy(self):
-    g = Game()
-    g.board = self.board
-    g.depth = self.depth
-    g.playerIndex = self.playerIndex
-    return g
-
-  def isEnd(self):
-    # End only when all three boards are dead
-    if countAliveBoard(self.board) == 0:
-      # Trick: See the bottom of main in loop, check end is run after the player index is increased
-      if self.playerIndex == 1:
-        print "You win the AI !" 
-      else:
-        print "AI win the game !"
-      return True
-    
-    return False 
-
-def countAliveBoard(board):
-  count = 0
-  for id in range(0, 3):
-    if isBoardAlive(board[id]):
-      count += 1
-  return count
-
-#
-def parseMutate(board, input):
-  # Type check (is it a string)
-  if not isinstance(input, str):
-    return False
-  # Length check (is it a string with length 2)
-  if len(input) != 2:
-    return False
-  # Type check
-  if input[0] not in set(["A", "B", "C"]) or input[1] not in set(["0", "1", "2", "3", "4", "5", "6", "7", "8"]):
-    return False
-  # Check whether the ord is already occupied
-  index = int(input[1])
-  id = ord(input[0]) - 65
-  # Check if the board is not dead and is occupied
-  if not isBoardAlive(board[id]) or board[id][index] != input[1]:
-    return False 
-  # Mutate the original board globally
-  board[id][index] = 'X'
-  return True 
+def isEnd(board):
+  # End only when all three boards are dead
+  return countAliveBoard(board) == 0
 
 def isBoardAlive(board):
   # Dead check in 3 rows
@@ -84,248 +20,258 @@ def isBoardAlive(board):
     if board[col] == 'X' and board[col+3] == 'X' and board[col+6] == 'X':
       return False 
   # Dead check in 2 diagonal
-  if board[4] == 'X' and ((board[0] == 'X' and board[8] == 'X') or (board[2] == 'X' and board[6] == 'X')):
+  if board[4] == 'X' and board[0] == 'X' and board[8] == 'X':
+    return False
+  if board[2] == 'X' and board[4] == 'X' and board[6] == 'X':
     return False 
 
   return True 
 
-def update (game, playerIndex):
-  if playerIndex == 0:
-    aiOutput = brain(copy.deepcopy(game))
-    parseMutate(game.board, aiOutput)
-    print "AI: {0}".format(aiOutput)
-  else:
-    isValidInput = False 
-    while not isValidInput:
-      isValidInput = parseMutate(game.board, raw_input('Your move: '))
+def countAliveBoard(board):
+  count = 0
+  for id in range(0, 3):
+    if isBoardAlive(board[id]):
+      count += 1
+  return count
 
 def draw (board):
   head = ''
   for id in range(0, 3):
     if isBoardAlive(board[id]):
-      head += "{0}:      ".format(chr(id + 65))
+      head += '{0}:      '.format(chr(id + 65))
   print head
   for row in range(0, 3):
     display = ''
     for id in range(0, 3):
       if isBoardAlive(board[id]):
-        display += "{0} {1} {2}   ".format(board[id][3*row], board[id][3*row+1], board[id][3*row+2])
+        display += '{0} {1} {2}   '.format(board[id][3*row], board[id][3*row+1], board[id][3*row+2])
     print display
 
-#############################################################################################
-def brain (game):
-  # Do not want to mutate the original reference
-  return minimax(game, 0, 0)[0] 
-
-def minimax(game, agentIdx, layer):
-
-    config = Configuration(game.board, game.depth)
-
-    if 2 <= agentIdx:
-      agentIdx = 0 # Pacman's turn again
-
-    layer += 1 
-
-    if layer == config.depth or countAliveBoard(game.board) == 0:
-      return (0, evaluationFunction(config.board, agentIdx))
-     
-    if agentIdx == 0:
-      return eval('MAX', config, agentIdx, layer)
-    else:
-      return eval('MIN', config, agentIdx, layer)
-
-def eval(type, game, agentIdx, layer):
-
-    legalMoves = getLegalMoves(game.board)
-    # Terminal node checking, no legal move anymore
-    if len(legalMoves) == 0:
-      return (0, evaluationFunction(game.board, agentIdx))
-
-    if type == 'MIN':
-      # Worst max is inf (Initialize)
-      v = (None, float("inf"))
-    else:
-      # Worst max is -inf (Initialize)
-      v = (None, -float("inf"))
-
-    for action in legalMoves:
-      successor = generateSuccessor(game, action)
-      #print layer 
-      result = minimax(successor, agentIdx+1, layer)[1]
-      #print "result {0}".format(result)
-      if type == 'MIN':
-        nextv = min(v[1], result)
-      else:
-        nextv = max(v[1], result)
-
-      if nextv is not v[1]:
-        v = (action, nextv)
-
-    return v 
+def parseMutate(board, inputVal): # Type check (is it a string)
+  if not isinstance(inputVal, str):
+    return False
+  # Length check (is it a string with length 2)
+  if len(inputVal) != 2:
+    return False
+  # Type check
+  if inputVal[0] not in set(['A', 'B', 'C']) or inputVal[1] not in set(['0', '1', '2', '3', '4', '5', '6', '7', '8']):
+    return False
+  # Check whether the ord is already occupied
+  index = int(inputVal[1])
+  id = ord(inputVal[0]) - 65
+  # Check if the board is not dead and is occupied
+  if not isBoardAlive(board[id]) or board[id][index] != inputVal[1]:
+    return False 
+  # Mutate the original board globally
+  board[id][index] = 'X'
+  return True 
 
 def getLegalMoves (board):
   # If the board is already dead, it won't show the board id 
-  # result = {}
   result = []
   for id in range(0, 3):
     if isBoardAlive(board[id]):
-      result += ["{0}{1}".format(chr(id+65), i) for i, x in enumerate(board[id]) if x != 'X']
+      result += ['{0}{1}'.format(chr(id+65), i) for i, x in enumerate(board[id]) if x != 'X']
   return result
 
-def generateSuccessor(game, action):
+def generateSuccessor(board, action):
   # Check whether the ord is already occupied
-  board = copy.deepcopy(game.board)
-  depth = copy.deepcopy(game.depth)
+  newBoard = deepcopy(board)
+  index, id = int(action[1]), ord(action[0]) - 65
+  newBoard[id][index] = 'X'
+  return newBoard 
 
-  index = int(action[1])
-  id = ord(action[0]) - 65
-  # No need to check if the board is not dead and is occupied
-  # Mutate the original board globally
-  board[id][index] = 'X'
-  return Configuration(board, depth) 
+def computeQuotient(board):
+  v = 1
+  for b in board:
+    v *= getFingerprint(b)
+  return v
+
+def isPset(q):
+  return q == QC*QC or q == QA or q == QB*QB or q == QB*QC
 
 def evaluationFunction (board, playerIndex):
-  board = copy.deepcopy(board)
   score = 0
-  
   if countAliveBoard(board) == 0:
-    if playerIndex == 1:
+    if playerIndex == 0:
       score -= 3000
     else:
       score += 3000
 
-  v = 1 
-  for b in board: 
-    v *= getFingerprint(b)
-
-  a, b, c, d = 2, 3, 5, 7
-  if v == c*c or v == a or v == b*b or v == b*c:
-    if playerIndex == 0:
-      score += 500
-
+  if isPset(computeQuotient(board)) and playerIndex == 0:
+    score += 500
   return score 
 
-# The input board is being treated (e.g. rotated/fliped)
+def minimax(board, depth, playerIndex, ab):
+
+  if isEnd(board) or depth == DEPTH:
+    return (None, evaluationFunction(board, playerIndex))
+
+  if isPset(computeQuotient(board)) and depth > 0:
+    return (None, evaluationFunction(board, playerIndex))
+  
+  legalMoves = getLegalMoves(board)
+
+  if(playerIndex == 1):
+    return evalMax(board, legalMoves, depth + 1, ab)
+  else:
+    return evalMin(board, legalMoves, depth + 1, ab)
+
+def evalMax (board, legalMoves, depth, ab):
+  v = (None, -float('inf'))
+  for lmove in legalMoves:
+    nodev = minimax(generateSuccessor(board, lmove), depth, 0, ab)
+    if nodev[1] > ab[1]:
+      return (lmove, nodev[1])
+    ab = (max(ab[0], nodev[1]), ab[1])
+    if nodev[1] > v[1]:
+      v = (lmove, nodev[1])
+  return v
+
+def evalMin (board, legalMoves, depth, ab):
+  v = (None, float('inf'))
+  for lmove in legalMoves:
+    nodev = minimax(generateSuccessor(board, lmove), depth, 1, ab)
+    if nodev[1] < ab[0]:
+      return (lmove, nodev[1])
+    ab = (ab[0], min(ab[1], nodev[1]))
+    if nodev[1] < v[1]:
+      v = (lmove, nodev[1])
+  return v
+
 def getFingerprint (currentBoard):
-  # Set a,b,c,d to prime number first
-  a, b, c, d = 2, 3, 5, 7
-  board = copy.deepcopy(currentBoard)
-  for rotation in range(0, 3):
+  board = deepcopy(currentBoard)
+  for rotation in range(0, 4):
     rBoard = rotate90(board, rotation)
-    for board in [rBoard, fliplr(rBoard), flipud(rBoard)]:
+    for board in [rBoard, flip(rBoard, 'RL'), flip(rBoard, 'UD')]:
       if board == ['.','.','.','.','.','.','.','.','.']:
-        return c
+        return QC 
       if board == ['.','.','.','.','X','.','.','.','.']:
-        return c*c
+        return QC*QC
       if board == ['X','X','.','.','.','.','.','.','.']:
-        return a*d 
+        return QA*QD 
       if board == ['X','.','X','.','.','.','.','.','.']:
-        return b 
+        return QB 
       if board == ['X','.','.','.','X','.','.','.','.']:
-        return b 
+        return QB 
       if board == ['X','.','.','.','.','X','.','.','.']:
-        return b
+        return QB
       if board == ['X','.','.','.','.','.','.','.','X']:
-        return a 
+        return QA 
       if board == ['.','X','.','X','.','.','.','.','.']:
-        return a 
+        return QA 
       if board == ['.','X','.','.','X','.','.','.','.']:
-        return b 
+        return QB 
       if board == ['.','X','.','.','.','.','.','X','.']:
-        return a 
+        return QA 
       if board == ['X','X','.','X','.','.','.','.','.']:
-        return b
+        return QB
       if board == ['X','X','.','.','X','.','.','.','.']:
-        return a*b
+        return QA*QB
       if board == ['X','X','.','.','.','X','.','.','.']:
-        return d
+        return QD
       if board == ['X','X','.','.','.','.','X','.','.']:
-        return a
+        return QA
       if board == ['X','X','.','.','.','.','.','X','.']:
-        return d
+        return QD
       if board == ['X','X','.','.','.','.','.','.','X']:
-        return d
+        return QD
       if board == ['X','.','X','.','X','.','.','.','.']:
-        return a
+        return QA
       if board == ['X','.','X','.','.','.','X','.','.']:
-        return a*b
+        return QA*QB
       if board == ['X','.','X','.','.','.','.','X','.']:
-        return a 
+        return QA 
       if board == ['X','.','.','.','X','X','.','.','.']:
-        return a
+        return QA
       if board == ['.','X','.','X','X','.','.','.','.']:
-        return a*b
+        return QA*QB
       if board == ['.','X','.','X','.','X','.','.','.']:
-        return b
+        return QB
       if board == ['X','X','.','X','X','.','.','.','.']:
-        return a 
+        return QA 
       if board == ['X','X','.','X','.','X','.','.','.']:
-        return a
+        return QA
       if board == ['X','X','.','X','.','.','.','.','X']:
-        return a
+        return QA
       if board == ['X','X','.','.','X','X','.','.','.']:
-        return b
+        return QB
       if board == ['X','X','.','.','X','.','X','.','.']:
-        return b 
+        return QB 
       if board == ['X','X','.','.','.','X','X','.','.']:
-        return b
+        return QB
       if board == ['X','X','.','.','.','X','.','X','.']:
-        return a*b
+        return QA*QB
       if board == ['X','X','.','.','.','X','.','.','X']:
-        return a*b
+        return QA*QB
       if board == ['X','X','.','.','.','.','X','X','.']:
-        return b
+        return QB
       if board == ['X','X','.','.','.','.','X','.','X']:
-        return b
+        return QB
       if board == ['X','X','.','.','.','.','.','X','X']:
-        return a 
+        return QA 
       if board == ['X','.','X','.','X','.','.','X','.']:
-        return b
+        return QB
       if board == ['X','.','X','.','.','.','X','.','X']:
-        return a
+        return QA
       if board == ['X','.','.','.','X','X','.','X','.']:
-        return b
+        return QB
       if board == ['.','X','.','X','.','X','.','X','.']:
-        return a 
+        return QA 
       if board == ['X','X','.','X','.','X','.','X','.']:
-        return b 
+        return QB 
       if board == ['X','X','.','X','.','X','.','.','X']:
-        return b 
+        return QB 
       if board == ['X','X','.','.','X','X','X','.','.']:
-        return a
+        return QA
       if board == ['X','X','.','.','.','X','X','X','.']:
-        return a 
+        return QA 
       if board == ['X','X','.','.','.','X','X','.','X']:
-        return a
+        return QA
       if board == ['X','X','.','X','.','X','.','X','X']:
-        return a
+        return QA
+
   return 1
 
 # Rotate 90 with given time anti-clockwise
 def rotate90 (board, time):
+  board = deepcopy(board)
   board1x9 = ['.' if i != 'X' else 'X' for i in board]
   board3x3 = np.resize(board1x9, (3,3))
   rotateboard3x3 = np.rot90(board3x3, time)
-  return np.resize(rotateboard3x3, (1,9)).tolist()
+  return np.resize(rotateboard3x3, (1,9)).tolist()[0]
 
-def fliplr (board1x9):
-  #board1x9 = ['.' if i != 'X' else 'X' for i in board]
+def flip (board, mode):
+  board1x9 = deepcopy(board)
   board3x3 = np.resize(board1x9, (3,3))  
-  flipboard3x3 = np.fliplr(board3x3) 
-  return np.resize(flipboard3x3, (1,9)).tolist() # returns flipped board in 1x9 list format
+  if mode == 'RL':
+    flipboard3x3 = np.fliplr(board3x3) 
+  else:
+    flipboard3x3 = np.flipud(board3x3)
+  return np.resize(flipboard3x3, (1,9)).tolist()[0] # returns flipped board in 1x9 list format
 
-def flipud (board1x9):
-  #board1x9 = ['.' if i != 'X' else 'X' for i in board]
-  board3x3 = np.resize(board1x9, (3,3))  
-  flipboard3x3 = np.flipud(board3x3) 
-  return np.resize(flipboard3x3, (1,9)).tolist() # returns flipped board in 1x9 list format
-##############################################################################################
-
-# Start main
+#run the game
 if __name__ == "__main__":
-  game = Game()
-  while not game.isEnd():
-    update(game, game.playerIndex)
-    draw(game.board)
-    game.playerIndex = (game.playerIndex + 1) % 2
 
+  #inital the board
+  board= (['0','1','2','3','4','5','6','7','8'],['0','1','2','3','4','5','6','7','8'],['0','1','2','3','4','5','6','7','8'])
+  playerIndex = 1
+
+  while(not isEnd(board)):
+    if playerIndex == 1:
+      aiOutput = minimax(board, 0, playerIndex, (-float("inf"), float("inf")))[0]
+      parseMutate(board, aiOutput)
+      print 'AI: {0}'.format(aiOutput)
+    else:
+      isValidInput = False                                              
+      while not isValidInput:
+        isValidInput = parseMutate(board, raw_input('Your move: '))
+
+    playerIndex = (playerIndex + 1) % 2
+    draw(board)
+
+  if playerIndex == 0:
+    # Never go here (supposed)
+    print 'Omg, You win !' 
+  else:
+    print 'AI win !'

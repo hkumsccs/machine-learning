@@ -320,7 +320,32 @@ def betterEvaluationFunction(currentGameState):
       DESCRIPTION: <write something here so we know what you did>
     """
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    if currentGameState.isWin():
+        return float("inf")
+    if currentGameState.isLose():
+        return - float("inf")
+    score = scoreEvaluationFunction(currentGameState)
+    newFood = currentGameState.getFood()
+    foodPos = newFood.asList()
+    closestfood = float("inf")
+    for pos in foodPos:
+        thisdist = util.manhattanDistance(pos, currentGameState.getPacmanPosition())
+        if (thisdist < closestfood):
+            closestfood = thisdist
+    numghosts = currentGameState.getNumAgents() - 1
+    i = 1
+    disttoghost = float("inf")
+    while i <= numghosts:
+        nextdist = util.manhattanDistance(currentGameState.getPacmanPosition(), currentGameState.getGhostPosition(i))
+        disttoghost = min(disttoghost, nextdist)
+        i += 1
+    score += max(disttoghost, 4) * 2
+    score -= closestfood * 1.5
+    capsulelocations = currentGameState.getCapsules()
+    score -= 4 * len(foodPos)
+    score -= 3.5 * len(capsulelocations)
+    return score
+
 
 class ContestAgent(MultiAgentSearchAgent):
     """
