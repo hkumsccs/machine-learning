@@ -313,39 +313,51 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
         return decision 
 
 def betterEvaluationFunction(currentGameState):
-    """
-      Your extreme ghost-hunting, pellet-nabbing, food-gobbling, unstoppable
-      evaluation function (question 5).
+    currentPosition = currentGameState.getPacmanPosition()
+    currentScore = currentGameState.getScore()
+    foodlist = currentGameState.getFood().asList()
 
-      DESCRIPTION: <write something here so we know what you did>
-    """
-    "*** YOUR CODE HERE ***"
-    if currentGameState.isWin():
-        return float("inf")
-    if currentGameState.isLose():
-        return - float("inf")
-    score = scoreEvaluationFunction(currentGameState)
-    newFood = currentGameState.getFood()
-    foodPos = newFood.asList()
-    closestfood = float("inf")
-    for pos in foodPos:
-        thisdist = util.manhattanDistance(pos, currentGameState.getPacmanPosition())
-        if (thisdist < closestfood):
-            closestfood = thisdist
-    numghosts = currentGameState.getNumAgents() - 1
-    i = 1
-    disttoghost = float("inf")
-    while i <= numghosts:
-        nextdist = util.manhattanDistance(currentGameState.getPacmanPosition(), currentGameState.getGhostPosition(i))
-        disttoghost = min(disttoghost, nextdist)
-        i += 1
-    score += max(disttoghost, 4) * 2
-    score -= closestfood * 1.5
-    capsulelocations = currentGameState.getCapsules()
-    score -= 4 * len(foodPos)
-    score -= 3.5 * len(capsulelocations)
-    return score
+    if currentGameState.isLose(): 
+      return -float("inf")
+    elif currentGameState.isWin():
+      return float("inf")
 
+    # food distance
+    foodDistance = [util.manhattanDistance(currentPosition, f) for f in foodlist]
+    closestFood = min(foodDistance)
+    farestFood = max(foodDistance)
+    # number of capsules
+    numCapsules = len(currentGameState.getCapsules())
+    # number of food is left
+    numFoods = len(foodlist)
+    
+    ghosts = [[], []]
+    for ghost in currentGameState.getGhostStates():
+      if not ghost.scaredTimer:
+        ghosts[0].append(ghost)
+      else: 
+        ghosts[1].append(ghost)
+
+    if len(ghosts[1]) > 0:
+      deadGhostsDistance = [util.manhattanDistance(currentPosition, g.getPosition()) for g in ghosts[1]]
+      closestScaredGhost = min(deadGhostsDistance)
+      farestScaredGhost = max(deadGhostsDistance)
+    else:
+      closestScaredGhost = 0 
+      farestScaredGhost = 0 
+
+    if len(ghosts[0]) > 0:
+      activeGhostsDistance = [util.manhattanDistance(currentPosition, g.getPosition()) for g in ghosts[0]]
+      closestActiveGhost = min(activeGhostsDistance)
+      farestActiveGhost = max(activeGhostsDistance)
+    else: 
+      closestActiveGhost = 0 # No ghost anymore
+      farestActiveGhost = 0 
+
+    return currentScore - .8 * closestFood - 30 * numCapsules -2 * numFoods - closestActiveGhost - closestScaredGhost - .5 * farestActiveGhost - .5 * farestScaredGhost 
+
+
+better = betterEvaluationFunction
 
 class ContestAgent(MultiAgentSearchAgent):
     """
