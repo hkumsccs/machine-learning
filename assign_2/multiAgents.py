@@ -327,7 +327,12 @@ def betterEvaluationFunction(currentGameState):
     closestFood = min(foodDistance)
     farestFood = max(foodDistance)
     # number of capsules
-    numCapsules = len(currentGameState.getCapsules())
+    capsules = currentGameState.getCapsules()
+    numCapsules = len(capsules)
+    if numCapsules > 0:
+      closestCapsules = min([util.manhattanDistance(currentPosition, c) for c in capsules])
+    else:
+      closestCapsules = 0
     # number of food is left
     numFoods = len(foodlist)
     
@@ -354,7 +359,7 @@ def betterEvaluationFunction(currentGameState):
       closestActiveGhost = 0 # No ghost anymore
       farestActiveGhost = 0 
 
-    return currentScore - .8 * closestFood - 30 * numCapsules -2 * numFoods - closestActiveGhost - closestScaredGhost - .5 * farestActiveGhost - .5 * farestScaredGhost 
+    return currentScore - .8 * closestFood - 30 * numCapsules - 2 * numFoods - closestActiveGhost - closestScaredGhost - 2 * farestActiveGhost - .8 * farestFood
 
 
 better = betterEvaluationFunction

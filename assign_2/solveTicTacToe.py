@@ -4,7 +4,7 @@ import numpy as np
 DEPTH = 3
 NUM_AGENT = 2
 # Misere quotient in the paper, pick prime numbers (arbitrary)
-QA, QB, QC, QD = 3, 7, 2, 5
+QA, QB, QC, QD = 2, 3, 5, 7 
 
 def isEnd(board):
   # End only when all three boards are dead
