@@ -14,6 +14,7 @@
 
 
 import mdp, util
+import operator
 
 from learningAgents import ValueEstimationAgent
 
@@ -46,7 +47,16 @@ class ValueIterationAgent(ValueEstimationAgent):
 
         # Write value iteration code here
         "*** YOUR CODE HERE ***"
-
+        # Outer loop for iteration time
+        # Define the value for each of state taking pi action
+        for i in range(0, iterations):
+          newDict = util.Counter() # Create another dictionary to prevent mutation 
+          for state in mdp.getStates():
+            if mdp.isTerminal(state):
+              newDict[state] = 0 # Set zero when it's in terminal node
+            else:
+              newDict[state] = max([ self.getQValue(state, action) for action in mdp.getPossibleActions(state)])
+          self.values = newDict # Update the raw values
 
     def getValue(self, state):
         """
@@ -54,14 +64,17 @@ class ValueIterationAgent(ValueEstimationAgent):
         """
         return self.values[state]
 
-
     def computeQValueFromValues(self, state, action):
         """
           Compute the Q-value of action in state from the
           value function stored in self.values.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        # Q(s, a) = Q(s, a) + _alpha * (reward + discount * value)
+        qVal = 0 
+        for transitionState, transitionStateProb in self.mdp.getTransitionStatesAndProbs(state, action):
+          qVal += transitionStateProb * (self.mdp.getReward(state, action, transitionState) + self.discount * self.getValue(transitionState))
+        return qVal
 
     def computeActionFromValues(self, state):
         """
@@ -73,7 +86,12 @@ class ValueIterationAgent(ValueEstimationAgent):
           terminal state, you should return None.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        possibleActions = self.mdp.getPossibleActions(state)
+        if len(possibleActions) == 0:
+          return None
+        else:
+          nextAction, maxValue = max([ [action, self.getQValue(state, action)] for action in possibleActions ], key=operator.itemgetter(1))
+          return nextAction
 
     def getPolicy(self, state):
         return self.computeActionFromValues(state)
